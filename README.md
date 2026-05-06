@@ -23,7 +23,7 @@ After deploying to Vercel, use:
 
 ```html
 <a href="https://www.acfun.cn/u/472630">
-  <img alt="AcFun Card" src="https://YOUR-VERCEL-DOMAIN.vercel.app/api/acfun-card/472630" width="520">
+  <img alt="AcFun Card" src="https://acfun-card-vercel.vercel.app/api/acfun-card/472630" width="520">
 </a>
 ```
 
