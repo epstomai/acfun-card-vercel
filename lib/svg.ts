@@ -4,6 +4,7 @@ export function renderAcfunCard(profile: AcfunProfile): string {
   const name = escapeXml(clipVisual(profile.name, 30));
   const [signatureLine1, signatureLine2] = splitSignature(profile.signature);
   const clubName = escapeXml(clipVisual(profile.clubName, 12));
+  const avatar = renderAvatar(profile.avatarDataUri);
 
   return `<svg width="520" height="190" viewBox="0 0 520 190" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AcFun profile card for ${name}</title>
@@ -35,8 +36,7 @@ export function renderAcfunCard(profile: AcfunProfile): string {
   <rect class="card" x="0.5" y="0.5" width="519" height="189" rx="6"/>
 
   <g transform="translate(24 23)">
-    <circle class="avatar" cx="17" cy="17" r="17"/>
-    <text class="avatar-text" x="17" y="23" text-anchor="middle">A</text>
+    ${avatar}
     <text class="eyebrow" x="48" y="10">ACFUN PROFILE</text>
     <text class="name" x="48" y="35">${name}</text>
     <text class="uid" x="450" y="18" text-anchor="end">#${escapeXml(profile.uid)}</text>
@@ -58,6 +58,21 @@ export function renderAcfunCard(profile: AcfunProfile): string {
     ${stat("等级", escapeXml(profile.level), 430)}
   </g>
 </svg>`;
+}
+
+function renderAvatar(avatarDataUri?: string): string {
+  if (!avatarDataUri) {
+    return `<circle class="avatar" cx="17" cy="17" r="17"/>
+    <text class="avatar-text" x="17" y="23" text-anchor="middle">A</text>`;
+  }
+
+  return `<defs>
+      <clipPath id="avatar-clip">
+        <circle cx="17" cy="17" r="16"/>
+      </clipPath>
+    </defs>
+    <circle class="avatar" cx="17" cy="17" r="17"/>
+    <image href="${escapeXml(avatarDataUri)}" x="1" y="1" width="32" height="32" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatar-clip)"/>`;
 }
 
 function stat(label: string, value: string, x: number): string {

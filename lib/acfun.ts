@@ -8,6 +8,7 @@ export type AcfunProfile = {
   medalCount: string;
   clubName: string;
   level: string;
+  avatarDataUri?: string;
 };
 
 type MedalPayload = {
@@ -44,6 +45,7 @@ export async function fetchAcfunProfile(uid: string): Promise<AcfunProfile> {
 
   const html = await response.text();
   const medal = readJsonAttribute<MedalPayload>(html, "data-medal");
+  const avatarUrl = readAvatarUrl(html);
 
   return {
     uid,
@@ -55,6 +57,7 @@ export async function fetchAcfunProfile(uid: string): Promise<AcfunProfile> {
     medalCount: pick(html, /共有([^个<]+)个守护徽章/u) || "-",
     clubName: medal?.clubName || "-",
     level: medal?.level ? `Lv.${medal.level}` : "-",
+    avatarDataUri: await fetchAvatarDataUri(avatarUrl),
   };
 }
 
@@ -62,6 +65,37 @@ function readCount(html: string, tabIndex: string, label: string): string {
   const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`data-index="${tabIndex}">${escapedLabel}<span>([^<]+)<\\/span>`, "u");
   return pick(html, pattern);
+}
+
+function readAvatarUrl(html: string): string {
+  const matches = [...html.matchAll(/\.user-photo\s*\{[^}]*background:url\((https?:\/\/[^)]+)\)/gu)];
+  return matches.at(-1)?.[1] || "";
+}
+
+async function fetchAvatarDataUri(url: string): Promise<string | undefined> {
+  if (!url) return undefined;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        accept: "image/*",
+        "user-agent": "Mozilla/5.0 AcFunCard/1.0 (+https://github.com)",
+      },
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) return undefined;
+
+    const contentType = response.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+    if (!contentType.startsWith("image/")) return undefined;
+
+    const image = await response.arrayBuffer();
+    if (image.byteLength > 1_000_000) return undefined;
+
+    return `data:${contentType};base64,${Buffer.from(image).toString("base64")}`;
+  } catch {
+    return undefined;
+  }
 }
 
 function pick(text: string, pattern: RegExp): string {
