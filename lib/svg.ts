@@ -1,9 +1,9 @@
 import type { AcfunProfile } from "./acfun";
 
 export function renderAcfunCard(profile: AcfunProfile): string {
-  const name = escapeXml(clip(profile.name, 24));
+  const name = escapeXml(clipVisual(profile.name, 30));
   const [signatureLine1, signatureLine2] = splitSignature(profile.signature);
-  const clubName = escapeXml(clip(profile.clubName, 8));
+  const clubName = escapeXml(clipVisual(profile.clubName, 12));
 
   return `<svg width="520" height="190" viewBox="0 0 520 190" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AcFun profile card for ${name}</title>
@@ -69,34 +69,94 @@ function stat(label: string, value: string, x: number): string {
 }
 
 function splitSignature(value: string): [string, string] {
-  const text = clip(value, 86);
-  const chars = Array.from(text);
+  const text = normalizeText(value);
   const preferred = text.search(/裏X:|X:|YTB:/u);
 
-  if (preferred > 24 && preferred < 64) {
+  if (preferred > 0 && visualWidth(text.slice(0, preferred)) <= 62) {
     return [
-      chars.slice(0, preferred).join("").trim(),
-      chars.slice(preferred).join("").trim(),
+      clipVisual(text.slice(0, preferred).trim(), 62),
+      clipVisual(text.slice(preferred).trim(), 62),
     ];
   }
 
-  let splitAt = Math.min(43, chars.length);
-  for (let index = splitAt; index > 28; index -= 1) {
-    if (/[\s。；;、,，]/u.test(chars[index] || "")) {
-      splitAt = index + 1;
-      break;
+  const lines = wrapVisual(text, 2, 62);
+  return [lines[0] || "", lines[1] || ""];
+}
+
+function normalizeText(value: string): string {
+  return String(value).replace(/\s+/g, " ").trim();
+}
+
+function wrapVisual(value: string, maxLines: number, maxUnits: number): string[] {
+  const lines: string[] = [];
+  let rest = normalizeText(value);
+
+  for (let lineIndex = 0; lineIndex < maxLines && rest; lineIndex += 1) {
+    const isLastLine = lineIndex === maxLines - 1;
+    const next = takeVisualLine(rest, maxUnits, isLastLine);
+    lines.push(next.line);
+    rest = next.rest.trim();
+  }
+
+  while (lines.length < maxLines) {
+    lines.push("");
+  }
+
+  return lines;
+}
+
+function takeVisualLine(value: string, maxUnits: number, truncate: boolean): { line: string; rest: string } {
+  const chars = Array.from(value);
+  let units = 0;
+  let lastBreak = -1;
+  let lastBreakUnits = 0;
+  const limit = truncate ? maxUnits - 3 : maxUnits;
+
+  for (let index = 0; index < chars.length; index += 1) {
+    const nextUnits = units + charUnits(chars[index]);
+    if (nextUnits > limit) {
+      const breakIndex = lastBreak > 0 && lastBreakUnits >= maxUnits * 0.45 ? lastBreak + 1 : index;
+      const line = chars.slice(0, breakIndex).join("").trim();
+      const rest = chars.slice(breakIndex).join("").trim();
+      return {
+        line: truncate && rest ? `${line}...` : line,
+        rest: truncate ? "" : rest,
+      };
+    }
+
+    units = nextUnits;
+    if (/[\s。；;、,，.!?！？:：]/u.test(chars[index])) {
+      lastBreak = index;
+      lastBreakUnits = units;
     }
   }
 
-  return [
-    chars.slice(0, splitAt).join("").trim(),
-    chars.slice(splitAt).join("").trim(),
-  ];
+  return { line: chars.join("").trim(), rest: "" };
 }
 
-function clip(value: string, length: number): string {
-  const chars = Array.from(String(value).replace(/\s+/g, " ").trim());
-  return chars.length > length ? `${chars.slice(0, length - 1).join("")}...` : chars.join("");
+function clipVisual(value: string, maxUnits: number): string {
+  const chars = Array.from(normalizeText(value));
+  let units = 0;
+  const output: string[] = [];
+
+  for (const char of chars) {
+    const nextUnits = units + charUnits(char);
+    if (nextUnits > maxUnits - 3) {
+      return `${output.join("").trim()}...`;
+    }
+    units = nextUnits;
+    output.push(char);
+  }
+
+  return output.join("").trim();
+}
+
+function visualWidth(value: string): number {
+  return Array.from(value).reduce((total, char) => total + charUnits(char), 0);
+}
+
+function charUnits(char: string): number {
+  return /[\u0000-\u00ff]/u.test(char) ? 1 : 2;
 }
 
 function formatNumber(value: string): string {

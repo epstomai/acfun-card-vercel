@@ -49,13 +49,19 @@ export async function fetchAcfunProfile(uid: string): Promise<AcfunProfile> {
     uid,
     name: pick(html, /<span class="text-overflow name" title="([^"]+)"/u) || "AcFun",
     signature: pick(html, /<div class='preview'>([\s\S]*?)<\/div><i class="arrow"/u),
-    fans: pick(html, /data-index="followed">粉丝<span>([\d,]+)<\/span>/u) || pick(html, /data-followed="([\d,]+)"/u) || "-",
-    following: pick(html, /data-index="following">关注<span>([\d,]+)<\/span>/u) || "-",
-    posts: pick(html, /data-index="contribute">投稿<span>([\d,]+)<\/span>/u) || "-",
-    medalCount: pick(html, /共有(\d+)个守护徽章/u) || "-",
+    fans: readCount(html, "followed", "粉丝") || pick(html, /data-followed="([^"]+)"/u) || "-",
+    following: readCount(html, "following", "关注") || "-",
+    posts: readCount(html, "contribute", "投稿") || "-",
+    medalCount: pick(html, /共有([^个<]+)个守护徽章/u) || "-",
     clubName: medal?.clubName || "-",
     level: medal?.level ? `Lv.${medal.level}` : "-",
   };
+}
+
+function readCount(html: string, tabIndex: string, label: string): string {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`data-index="${tabIndex}">${escapedLabel}<span>([^<]+)<\\/span>`, "u");
+  return pick(html, pattern);
 }
 
 function pick(text: string, pattern: RegExp): string {
