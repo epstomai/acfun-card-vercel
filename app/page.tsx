@@ -1,4 +1,4 @@
-const defaultUid = "472630";
+const defaultUid = "23682490";
 const endpoint = `/api/acfun-card/${defaultUid}`;
 const readmeSnippet = `<a href="https://www.acfun.cn/u/${defaultUid}">
   <img alt="AcFun Card" src="https://YOUR-VERCEL-DOMAIN.vercel.app${endpoint}" width="520">

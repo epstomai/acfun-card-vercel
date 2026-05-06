@@ -14,7 +14,7 @@ Open `http://localhost:3000` for the preview page.
 The image endpoint is:
 
 ```text
-/api/acfun-card/472630
+/api/acfun-card/23682490
 ```
 
 ## GitHub README
@@ -22,8 +22,8 @@ The image endpoint is:
 After deploying to Vercel, use:
 
 ```html
-<a href="https://www.acfun.cn/u/472630">
-  <img alt="AcFun Card" src="https://acfun-card-vercel.vercel.app/api/acfun-card/472630" width="520">
+<a href="https://www.acfun.cn/u/23682490">
+  <img alt="AcFun Card" src="https://acfun-card-vercel.vercel.app/api/acfun-card/23682490" width="520">
 </a>
 ```
 
