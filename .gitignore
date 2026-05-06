@@ -1,0 +1,8 @@
+.next
+node_modules
+dist
+.env*.local
+.vercel
+*.log
+.next-server.pid
+tsconfig.tsbuildinfo
