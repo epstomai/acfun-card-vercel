@@ -18,10 +18,10 @@ export default function Home() {
 
         <div className="preview-grid">
           <div className="preview light">
-            <img src={endpoint} width="520" height="190" alt="AcFun card light preview" />
+            <img src={endpoint} width="520" alt="AcFun card light preview" />
           </div>
           <div className="preview dark">
-            <img src={endpoint} width="520" height="190" alt="AcFun card dark preview" />
+            <img src={endpoint} width="520" alt="AcFun card dark preview" />
           </div>
         </div>
 

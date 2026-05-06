@@ -2,11 +2,18 @@ import type { AcfunProfile } from "./acfun";
 
 export function renderAcfunCard(profile: AcfunProfile): string {
   const name = escapeXml(clipVisual(profile.name, 30));
-  const [signatureLine1, signatureLine2] = splitSignature(profile.signature);
+  const signatureLines = splitSignature(profile.signature);
   const clubName = escapeXml(clipVisual(profile.clubName, 12));
   const avatar = renderAvatar(profile.avatarDataUri);
+  const lineHeight = 18;
+  const dividerY = 100 + (signatureLines.length - 1) * lineHeight;
+  const statsY = dividerY + 19;
+  const cardHeight = statsY + 53;
+  const signature = signatureLines
+    .map((line, index) => `<text class="signature" x="0" y="${index * lineHeight}">${escapeXml(line)}</text>`)
+    .join("\n    ");
 
-  return `<svg width="520" height="190" viewBox="0 0 520 190" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  return `<svg width="520" height="${cardHeight}" viewBox="0 0 520 ${cardHeight}" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AcFun profile card for ${name}</title>
   <desc id="desc">GitHub style AcFun profile card with adaptive light and dark theme colors.</desc>
   <style>
@@ -33,7 +40,7 @@ export function renderAcfunCard(profile: AcfunProfile): string {
     }
   </style>
 
-  <rect class="card" x="0.5" y="0.5" width="519" height="189" rx="6"/>
+  <rect class="card" x="0.5" y="0.5" width="519" height="${cardHeight - 1}" rx="6"/>
 
   <g transform="translate(24 23)">
     ${avatar}
@@ -43,13 +50,12 @@ export function renderAcfunCard(profile: AcfunProfile): string {
   </g>
 
   <g transform="translate(24 78)">
-    <text class="signature" x="0" y="0">${escapeXml(signatureLine1)}</text>
-    <text class="signature" x="0" y="20">${escapeXml(signatureLine2)}</text>
+    ${signature}
   </g>
 
-  <line class="divider" x1="24" y1="118.5" x2="496" y2="118.5"/>
+  <line class="divider" x1="24" y1="${dividerY + 0.5}" x2="496" y2="${dividerY + 0.5}"/>
 
-  <g transform="translate(24 137)">
+  <g transform="translate(24 ${statsY})">
     ${stat("粉丝", formatNumber(profile.fans), 0)}
     ${stat("关注", formatNumber(profile.following), 86)}
     ${stat("投稿", formatNumber(profile.posts), 172)}
@@ -83,60 +89,50 @@ function stat(label: string, value: string, x: number): string {
     </g>`;
 }
 
-function splitSignature(value: string): [string, string] {
+function splitSignature(value: string): string[] {
   const text = normalizeText(value);
   const preferred = text.search(/裏X:|X:|YTB:/u);
 
   if (preferred > 0 && visualWidth(text.slice(0, preferred)) <= 62) {
     return [
-      clipVisual(text.slice(0, preferred).trim(), 62),
-      clipVisual(text.slice(preferred).trim(), 62),
+      text.slice(0, preferred).trim(),
+      ...wrapVisual(text.slice(preferred).trim(), 62),
     ];
   }
 
-  const lines = wrapVisual(text, 2, 62);
-  return [lines[0] || "", lines[1] || ""];
+  return wrapVisual(text, 62);
 }
 
 function normalizeText(value: string): string {
   return String(value).replace(/\s+/g, " ").trim();
 }
 
-function wrapVisual(value: string, maxLines: number, maxUnits: number): string[] {
+function wrapVisual(value: string, maxUnits: number): string[] {
   const lines: string[] = [];
   let rest = normalizeText(value);
 
-  for (let lineIndex = 0; lineIndex < maxLines && rest; lineIndex += 1) {
-    const isLastLine = lineIndex === maxLines - 1;
-    const next = takeVisualLine(rest, maxUnits, isLastLine);
+  while (rest) {
+    const next = takeVisualLine(rest, maxUnits);
     lines.push(next.line);
     rest = next.rest.trim();
   }
 
-  while (lines.length < maxLines) {
-    lines.push("");
-  }
-
-  return lines;
+  return lines.length ? lines : [""];
 }
 
-function takeVisualLine(value: string, maxUnits: number, truncate: boolean): { line: string; rest: string } {
+function takeVisualLine(value: string, maxUnits: number): { line: string; rest: string } {
   const chars = Array.from(value);
   let units = 0;
   let lastBreak = -1;
   let lastBreakUnits = 0;
-  const limit = truncate ? maxUnits - 3 : maxUnits;
 
   for (let index = 0; index < chars.length; index += 1) {
     const nextUnits = units + charUnits(chars[index]);
-    if (nextUnits > limit) {
+    if (nextUnits > maxUnits) {
       const breakIndex = lastBreak > 0 && lastBreakUnits >= maxUnits * 0.45 ? lastBreak + 1 : index;
       const line = chars.slice(0, breakIndex).join("").trim();
       const rest = chars.slice(breakIndex).join("").trim();
-      return {
-        line: truncate && rest ? `${line}...` : line,
-        rest: truncate ? "" : rest,
-      };
+      return { line, rest };
     }
 
     units = nextUnits;
