@@ -1,7 +1,7 @@
 const defaultUid = "23682490";
 const endpoint = `/api/acfun-card/${defaultUid}`;
 const readmeSnippet = `<a href="https://www.acfun.cn/u/${defaultUid}">
-  <img alt="AcFun Card" src="https://YOUR-VERCEL-DOMAIN.vercel.app${endpoint}" width="520">
+  <img alt="AcFun Card" src="https://acfun-card-vercel.vercel.app${endpoint}" width="520">
 </a>`;
 
 export default function Home() {
@@ -41,7 +41,7 @@ export default function Home() {
         </div>
 
         <p className="note">
-          Replace YOUR-VERCEL-DOMAIN after deployment. Responses are cached for one hour.
+          Responses are cached for one hour.
         </p>
       </section>
     </main>
